@@ -10,7 +10,7 @@ import Link from 'next/link';
 const Header = () => {
   const [isSidebarOpen,setisSidebarOpen] = useState(false);
   const cart = useAppSelector((state:any) => state.counter.cart);
-const total = Object.values(cart).reduce(
+const total:any = Object.values(cart).reduce(
   (acc:any, item:any) => acc + parseInt(item.price.replace(/[₹,]/g, '')) * item.quantity,
   0
 );

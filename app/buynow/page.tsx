@@ -2,7 +2,7 @@
 
 import { useAppSelector } from '../redux/hooks';
 import { useEffect, useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, type StripeElementsOptions } from '@stripe/stripe-js';
 import {
   Elements,
   PaymentElement,
@@ -10,10 +10,16 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 
-// Load Stripe outside component to avoid recreating on every render
+// Load Stripe outside of component
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
-// Payment Form Component
+// Define CartItem type
+interface CartItem {
+  price: string;
+  quantity: number;
+}
+
+// Checkout Form Component
 const CheckoutForm = () => {
   const stripe = useStripe();
   const elements = useElements();
@@ -51,11 +57,14 @@ const CheckoutForm = () => {
 };
 
 const BuyNow = () => {
-  const cart = useAppSelector((state) => state.counter.cart);
-  const total = Object.values(cart).reduce(
-    (acc: any, item: any) => acc + parseInt(item.price.replace(/[₹,]/g, '')) * item.quantity,
-    0
-  );
+  // Cast the cart to the expected shape: Record<string, CartItem>
+  const cart = useAppSelector((state) => state.counter.cart) as Record<string, CartItem>;
+
+  // Now `reduce` will be fully type-safe
+  const total = Object.values(cart).reduce((acc, item) => {
+    const price = parseInt(item.price.replace(/[₹,]/g, ''), 10);
+    return acc + price * item.quantity;
+  }, 0);
 
   const [clientSecret, setClientSecret] = useState('');
 
@@ -75,14 +84,18 @@ const BuyNow = () => {
     }
   }, [total]);
 
-  const appearance = {
+  const appearance: {
+    theme: 'stripe' | 'flat' | 'night';
+  } = {
     theme: 'stripe',
   };
+  
 
-  const options = {
-    clientSecret,
-    appearance,
-  };
+  
+const options: StripeElementsOptions = {
+  clientSecret,
+  appearance,
+};
 
   return (
     <div className="p-8 max-w-lg mx-auto">
